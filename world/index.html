@@ -60,11 +60,10 @@
   .asset small { color: #adc2b6; font-size: 10px; }
   #library-message { color: #b9c7c0; margin: 8px 0 0; }
   #history-controls { position: absolute; z-index: 2; bottom: 110px; left: 50%; transform: translateX(-50%);
-    width: min(760px, calc(100% - 40px)); box-sizing: border-box; padding: 10px 12px; background: #0c1311e8;
+    max-width: calc(100% - 40px); box-sizing: border-box; padding: 10px 12px; background: #0c1311e8;
     border: 1px solid #62736b; border-radius: 5px; }
   #history-label { display: block; margin-bottom: 7px; color: #c6d7cc; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-  .history-row { display: flex; align-items: center; gap: 10px; }
-  #history-range { flex: 1; min-width: 40px; cursor: ew-resize; }
+  .history-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
   body.library-open #strip { visibility: hidden; }
   @media (max-width: 650px) { #keys { display: none; } #gen-controls { gap: 8px; left: 10px; right: 10px; } }
   @media (max-width: 420px) { #library { left: 10px; width: calc(100% - 20px); } #strip { display: none; } }
@@ -96,12 +95,10 @@
 </div>
 <div id="frame"></div>
 <section id="history-controls" aria-label="World history">
-  <output id="history-label" for="history-range">Starting view</output>
+  <output id="history-label">Starting view</output>
   <div class="history-row">
     <button id="history-undo" class="tool" type="button" title="Undo · Cmd/Ctrl Z or [" disabled>Undo</button>
-    <input id="history-range" type="range" min="0" max="0" step="1" value="0" aria-label="World history step" disabled>
     <button id="history-redo" class="tool" type="button" title="Redo · Cmd/Ctrl Shift Z or ]" disabled>Redo</button>
-    <button id="history-play" class="tool" type="button" disabled>Play</button>
   </div>
 </section>
 <form id="gen-controls">
@@ -430,18 +427,13 @@ $("prompt").addEventListener("keydown", (event) => {
 function updateEditorControls() {
   const timeline = historyState.timeline || [{ label: "Starting view" }];
   const last = timeline.length - 1, at = requestedStep ?? historyState.cursor ?? 0;
-  $("history-range").max = last; $("history-range").value = at;
-  $("history-range").disabled = busy || !editorReady || last === 0;
-  $("history-range").setAttribute("aria-valuetext", `${at} of ${last}: ${timeline[at]?.label || ""}`);
   $("history-label").textContent = `${at} / ${last} · ${timeline[at]?.label || "Starting view"}${historyLoading ? " · loading" : ""}`;
   $("history-undo").disabled = busy || !editorReady || at === 0;
   $("history-redo").disabled = busy || !editorReady || at === last;
-  $("history-play").disabled = busy || !editorReady || last === 0;
-  $("history-play").textContent = playing ? "Pause" : "Play";
   $("gen").disabled = busy || historyLoading;
   document.querySelectorAll(".asset").forEach(button => { button.disabled = busy || historyLoading; });
 }
-function stopPlayback() { playing = false; clearTimeout(playTimer); $("history-play").textContent = "Play"; }
+function stopPlayback() { playing = false; clearTimeout(playTimer); }
 function seekStep(value, fromPlayback = false) {
   if (busy || !editorReady) return Promise.resolve();
   if (!fromPlayback) stopPlayback();
@@ -465,29 +457,8 @@ function seekStep(value, fromPlayback = false) {
   });
   return historyChain;
 }
-async function playbackStep() {
-  if (!playing) return;
-  const last = (historyState.timeline?.length || 1) - 1;
-  if (historyState.cursor >= last) { stopPlayback(); updateEditorControls(); return; }
-  await seekStep(historyState.cursor + 1, true);
-  if (playing) playTimer = setTimeout(playbackStep, 1100);
-}
-$("history-play").addEventListener("click", async () => {
-  if (playing) { stopPlayback(); return; }
-  playing = true; updateEditorControls();
-  if (historyState.cursor >= (historyState.timeline?.length || 1) - 1) await seekStep(0, true);
-  if (playing) playTimer = setTimeout(playbackStep, 600);
-});
 $("history-undo").addEventListener("click", () => seekStep((requestedStep ?? historyState.cursor) - 1));
 $("history-redo").addEventListener("click", () => seekStep((requestedStep ?? historyState.cursor) + 1));
-$("history-range").addEventListener("input", event => seekStep(event.target.value));
-let wheelAt = -Infinity;
-$("history-range").addEventListener("wheel", event => {
-  event.preventDefault();
-  if (performance.now() - wheelAt < 140) return;
-  wheelAt = performance.now();
-  seekStep((requestedStep ?? historyState.cursor) + Math.sign(event.deltaY));
-}, { passive: false });
 $("show-cones").addEventListener("change", event => {
   showCones = event.target.checked;
   extras.forEach(x => { x.cone.visible = showCones; });
