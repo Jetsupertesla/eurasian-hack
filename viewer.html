@@ -23,7 +23,7 @@
 <div id="links"></div>
 <div id="bar">
   <span>Before</span>
-  <input id="wipe" type="range" min="-1" max="1" step="0.004" value="-1">
+  <input id="wipe" type="range" min="-1" max="1" step="0.004" value="-1" aria-label="Reveal renovation">
   <span>After</span>
   <button id="sweep">Sweep</button>
   <button id="reset">Reset view</button>
@@ -111,7 +111,9 @@ controls.minPolarAngle = Math.PI / 2 - 0.15;                          // up-down
 controls.maxPolarAngle = Math.PI / 2 + 0.15;
 controls.minDistance = 1.2; controls.maxDistance = 2.4;
 
+let pushFrame = 0;
 function resetView() {
+  cancelAnimationFrame(pushFrame);
   camera.position.set(0, 0, 0.001);
   controls.target.copy(TARGET);
   controls.update();
@@ -120,10 +122,11 @@ function resetView() {
   const step = (now) => {
     const k = Math.min(1, (now - t0) / 2000);
     camera.position.z = 0.001 - 0.45 * (1 - Math.pow(1 - k, 3));
-    if (k < 1) requestAnimationFrame(step);
+    if (k < 1) pushFrame = requestAnimationFrame(step);
   };
-  requestAnimationFrame(step);
+  pushFrame = requestAnimationFrame(step);
 }
+controls.addEventListener("start", () => cancelAnimationFrame(pushFrame));
 resetView();
 
 // ---- controls --------------------------------------------------------------
@@ -134,16 +137,23 @@ function setWipe(v) {
   after.updateVersion();
   slider.value = String(v);
 }
-slider.oninput = () => setWipe(parseFloat(slider.value));
+let sweepFrame = 0;
+slider.oninput = () => {
+  cancelAnimationFrame(sweepFrame);
+  setWipe(parseFloat(slider.value));
+};
 
 document.getElementById("sweep").onclick = () => {
+  cancelAnimationFrame(sweepFrame);
+  if (Number(slider.value) >= 1) setWipe(-1);
+  const from = Number(slider.value);
   const t0 = performance.now();
   const step = (now) => {
     const k = Math.min(1, (now - t0) / 2500);
-    setWipe(-1 + 2 * k);
-    if (k < 1) requestAnimationFrame(step);
+    setWipe(from + (1 - from) * k);
+    if (k < 1) sweepFrame = requestAnimationFrame(step);
   };
-  requestAnimationFrame(step);
+  sweepFrame = requestAnimationFrame(step);
 };
 document.getElementById("reset").onclick = resetView;
 
