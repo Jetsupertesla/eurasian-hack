@@ -1,0 +1,14 @@
+{
+  "name": "eurasian-hack-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "serve ."
+  },
+  "dependencies": {
+    "sharp": "^0.34.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
