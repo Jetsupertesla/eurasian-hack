@@ -1,5 +1,4 @@
 node_modules/
 .env
-rooms/*.ply
 edited/cand/
 .DS_Store
