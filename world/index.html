@@ -1,0 +1,321 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>World from one photo</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #e9e9e4; overflow: hidden;
+    font: 12px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .02em; }
+  canvas { position: absolute; inset: 0; display: block; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  #shade { position: absolute; left: 0; right: 0; bottom: 0; height: 190px; pointer-events: none;
+    background: linear-gradient(transparent, rgba(0, 0, 0, .7)); }
+  .hud { position: absolute; pointer-events: none; text-transform: uppercase; text-shadow: 0 0 3px #000, 0 0 8px #000; }
+  #worlds { top: 18px; left: 20px; pointer-events: auto; }
+  #worlds a { color: #b9b9b2; text-decoration: none; margin-right: 16px; }
+  #worlds a.on { color: #fff; border-bottom: 1px solid #fff; padding-bottom: 2px; }
+  #status { top: 18px; right: 20px; text-align: right; color: #fff; }
+  #keys { bottom: 20px; right: 20px; text-align: right; color: #b9b9b2; }
+  #strip { bottom: 20px; left: 20px; display: flex; align-items: flex-end; gap: 12px; }
+  #strip figure { margin: 0; }
+  #strip figcaption { color: #b9b9b2; margin-bottom: 5px; }
+  #strip img { display: block; height: 96px; border: 1px solid #77776f; }
+  #strip .arrow { color: #b9b9b2; padding-bottom: 38px; }
+  #panoBox { position: relative; overflow: hidden; display: inline-block; vertical-align: bottom; }
+  #mark { position: absolute; border: 1px solid #fff; box-sizing: border-box; box-shadow: 0 0 0 1px rgba(0, 0, 0, .5); }
+  #count { color: #fff; padding-bottom: 30px; white-space: nowrap; }
+  #frame { position: absolute; top: 0; bottom: 0; left: 50%; aspect-ratio: 1; transform: translateX(-50%); box-sizing: border-box;
+    pointer-events: none; border: 1px solid rgba(255, 255, 255, .28); opacity: 0; transition: opacity .4s; }
+  #frame.busy { border-color: #fff; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45); animation: scan 1.2s ease-in-out infinite alternate; }
+  @keyframes scan { from { border-color: rgba(255, 255, 255, .35); } to { border-color: #fff; } }
+  #gen { bottom: 20px; left: 50%; transform: translateX(-50%); pointer-events: auto; cursor: pointer; color: #fff;
+    border: 1px solid #fff; padding: 6px 14px; background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity .4s; }
+</style>
+
+<div id="shade"></div>
+<div id="worlds" class="hud"></div>
+<div id="status" class="hud">loading</div>
+<div id="strip" class="hud">
+  <figure><figcaption>1 photo</figcaption><img id="photo"></figure>
+  <div class="arrow">&rarr;</div>
+  <figure><figcaption>image model paints the rest, 360&deg;</figcaption>
+    <div id="panoBox"><img id="pano"><div id="mark"></div></div></figure>
+  <div class="arrow">&rarr;</div>
+  <div id="count"></div>
+</div>
+<div id="frame"></div>
+<div id="gen" class="hud">generate this view &middot; g</div>
+<div id="keys" class="hud">drag look &middot; wasd move &middot; q e down up &middot; shift fast &middot; scroll zoom<br>g generate &middot; x undo generated &middot; r replay</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "../lib/three/three.module.js",
+  "three/addons/": "../lib/three/addons/",
+  "@sparkjsdev/spark": "../lib/spark.module.js"
+} }
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { SparkRenderer, SplatMesh, dyno } from "@sparkjsdev/spark";
+
+const q = new URLSearchParams(location.search);
+const $ = (id) => document.getElementById(id);
+const names = await fetch("./worlds/index.json").then(r => r.json()).catch(() => []);
+const name = q.get("w") || names[0] || "room3";
+const base = `./worlds/${name}/`;
+const world = await (await fetch(base + "world.json")).json();
+$("worlds").innerHTML = names.map((n, i) => `<a class="${n === name ? "on" : ""}" href="?w=${n}">${i + 1} ${n}</a>`).join("");
+const gen0 = await fetch(base + "gen.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null);   // views generated earlier
+const fileOf = (f) => gen0?.replace?.[f] || f;
+$("photo").src = base + "photo.jpg";
+$("pano").src = base + "pano_small.jpg";
+
+// ---- scene --------------------------------------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, Number(q.get("pr") || 1.25)));
+renderer.setSize(innerWidth, innerHeight);
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.02, 500);
+camera.rotation.order = "YXZ";
+// splats are drawn out to this many standard deviations; a little under Spark's default (2.83) is faster and looks the same here
+const spark = new SparkRenderer({ renderer, maxStdDev: Number(q.get("sd") || 2.4) });
+scene.add(spark);
+
+const rad = Math.PI / 180;
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+const ease = (x) => { x = clamp01(x); return x * x * (3 - 2 * x); };
+// constant speed with a soft start and stop
+const glide = (x, a = 0.15) => { x = clamp01(x); const v = 1 / (1 - a);
+  return x < a ? v * x * x / (2 * a) : x > 1 - a ? 1 - v * (1 - x) * (1 - x) / (2 * a) : v * (x - a / 2); };
+// world axes: +x right, +y up, -z forward at yaw 0 (same as world/geo.py)
+const dirOf = (yaw, pitch) => new THREE.Vector3(
+  Math.sin(yaw * rad) * Math.cos(pitch * rad), Math.sin(pitch * rad), -Math.cos(yaw * rad) * Math.cos(pitch * rad));
+
+// ---- each view grows outward from the capture point along its own rays -------------------------
+function growModifier(t, axis) {
+  const A = `vec3(${axis.x.toFixed(5)}, ${axis.y.toFixed(5)}, ${axis.z.toFixed(5)})`;
+  return dyno.dynoBlock({ gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat }, ({ gsplat }) => {
+    const d = new dyno.Dyno({
+      inTypes: { gsplat: dyno.Gsplat, t: "float" },
+      outTypes: { gsplat: dyno.Gsplat },
+      statements: ({ inputs, outputs }) => `
+        ${outputs.gsplat} = ${inputs.gsplat};
+        vec3 gwC = ${inputs.gsplat}.center;
+        float gwA = acos(clamp(dot(normalize(gwC), ${A}), -1.0, 1.0)) / 0.9;
+        float gwP = clamp(${inputs.t} * 1.7 - gwA * 0.7, 0.0, 1.0);
+        float gwE = gwP * gwP * (3.0 - 2.0 * gwP);
+        ${outputs.gsplat}.center = gwC * mix(0.3, 1.0, gwE);
+        ${outputs.gsplat}.scales = ${inputs.gsplat}.scales * mix(0.15, 1.0, gwE);
+        ${outputs.gsplat}.rgba.a = ${inputs.gsplat}.rgba.a * gwE;
+      `.split("\n"),
+    });
+    return { gsplat: d.apply({ gsplat, t }).gsplat };
+  });
+}
+
+function frustumLines(v, len) {
+  const f = dirOf(v.yaw, v.pitch), r = new THREE.Vector3(Math.cos(v.yaw * rad), 0, Math.sin(v.yaw * rad));
+  const u = new THREE.Vector3().crossVectors(r, f);
+  const k = Math.tan(world.fov * rad / 2) * 0.6;    // drawn narrower than the real view so neighbours stay apart
+  const c = [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(([a, b]) =>
+    f.clone().addScaledVector(r, a * k).addScaledVector(u, b * k).multiplyScalar(len));
+  const o = new THREE.Vector3(), pts = [];
+  c.forEach((p, i) => pts.push(o, p, p, c[(i + 1) % 4]));
+  const g = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthTest: false }));
+  g.renderOrder = 10;
+  return g;
+}
+
+// ---- timeline -----------------------------------------------------------------------------------
+// the first view stands alone, the camera steps out to show it as a slab, then one slow turn
+// around the capture point while every other view grows in just ahead of the gaze
+const T_HOLD = 1.2, T_OUT = 2.4, T_S = T_HOLD + T_OUT + 0.8, T_SWEEP = 9, GROW = 1.15, T_END = T_S + T_SWEEP + 0.4;
+const sweepYaw = (tau) => 360 * glide((tau - T_S) / T_SWEEP);
+function timeAtYaw(y) { let a = T_S, b = T_S + T_SWEEP; for (let i = 0; i < 30; i++) { const m = (a + b) / 2; sweepYaw(m) < y ? a = m : b = m; } return a; }
+
+let fancy = true;
+const chunks = world.views.map((v, i) => {
+  const t = dyno.dynoFloat(0);
+  let mesh;
+  try { mesh = new SplatMesh({ url: base + fileOf(v.file), objectModifier: growModifier(t, dirOf(v.yaw, v.pitch)) }); }
+  catch (e) { console.warn("grow effect unavailable, using a plain fade", e); fancy = false; mesh = new SplatMesh({ url: base + fileOf(v.file) }); }
+  scene.add(mesh);
+  const cam = frustumLines(v, 0.07 * world.views[0].dist), rays = frustumLines(v, v.dist);
+  scene.add(cam, rays);
+  const y = ((v.yaw % 360) + 360) % 360;
+  // floor and ceiling views span far more of the turn than level ones, so they start earlier
+  const fireAt = i === 0 ? 0.1 : timeAtYaw(Math.max(0, y - (v.pitch ? 128 : 58))) + (v.pitch ? 0.12 * (i % 4) : 0);
+  return { v, t, mesh, cam, rays, fireAt, shown: -1, file: fileOf(v.file) };
+});
+function setGrow(c, x) {            // x: 0 hidden .. 1 fully there
+  if (c.shown === x) return;
+  c.shown = x;
+  if (fancy) { c.t.value = x * 1.25; c.mesh.updateVersion(); } else c.mesh.opacity = x;
+}
+
+let loaded = 0;
+await Promise.all(chunks.map(c => c.mesh.initialized.then(() => { $("status").textContent = `loading ${++loaded}/${chunks.length}`; })));
+
+// ---- camera -------------------------------------------------------------------------------------
+const D = world.views[0].dist;                       // typical distance to the first view's surfaces, metres
+const OUT = new THREE.Vector3(0.30 * D, 0.14 * D, 0.62 * D);
+const LOOK = new THREE.Vector3(0, 0, -0.7 * D);
+const REACH = 4 * D;                                 // how far you may fly from the capture point
+const pos = new THREE.Vector3();
+let yaw = 0, pitch = 0, free = false, t0 = performance.now(), lastInput = 0, genStatus = "";
+const extras = [], pending = [];                     // generated views, and meshes waiting for the build animation to end
+const keys = new Set();
+
+function replay() { t0 = performance.now(); free = false; pos.set(0, 0, 0); yaw = pitch = 0; camera.fov = 62; camera.updateProjectionMatrix();
+  extras.forEach(x => { scene.remove(x.mesh); if (!pending.includes(x.mesh)) pending.push(x.mesh); }); }
+function takeOver() {               // any input: finish the build at once and hand over the camera
+  lastInput = performance.now();
+  if (free) return;
+  free = true;
+  if ((performance.now() - t0) / 1000 < T_END) t0 = performance.now() - T_END * 1000;
+  if (pos.length() > REACH) pos.setLength(REACH);
+}
+
+function timeline(tau) {
+  let fired = 0;
+  const away = clamp01(pos.length() / (0.12 * D));   // the markers sit at the capture point: hide them when standing on it
+  chunks.forEach((c, i) => {
+    const s = clamp01((tau - c.fireAt) / GROW);
+    if (tau >= c.fireAt) fired++;
+    setGrow(c, s);
+    const pulse = i === 0 ? ease((tau - T_HOLD) / 0.8) * (1 - ease((tau - T_S) / 1.5)) : (s > 0 && s < 1 ? 1 - Math.abs(s - 0.4) / 0.6 : 0);
+    c.rays.material.opacity = tau < T_END ? 0.55 * Math.max(0, pulse) * (i === 0 ? 1 : 0.6) : 0;
+    c.cam.material.opacity = tau < T_END && i === 0 ? away * 0.95 : 0;   // one photo, one camera
+  });
+  $("status").textContent = tau < T_END ? `building view ${String(Math.max(1, fired)).padStart(2, "0")}/${chunks.length}` : genStatus;
+  if (free) return;
+  pos.copy(OUT).multiplyScalar(ease((tau - T_HOLD) / T_OUT) * (1 - ease((tau - T_S + 0.6) / 2.0)));
+  const d = LOOK.clone().sub(pos).normalize();
+  yaw = Math.atan2(d.x, -d.z) / rad + sweepYaw(tau);
+  pitch = Math.asin(d.y) / rad - 5 * Math.sin(Math.PI * clamp01((tau - T_S) / T_SWEEP));
+  if (tau > T_END) { yaw = 0; pitch = 0; free = true; lastInput = performance.now() - 1500; }
+}
+
+const mark = $("mark");
+function placeMark() {              // where the gaze sits on the panorama
+  const vfov = camera.fov, hfov = 2 * Math.atan(Math.tan(vfov * rad / 2) * camera.aspect) / rad;
+  const span = 180 * world.panoH / world.panoW * 2;  // vertical degrees the panorama covers
+  const y = (((yaw + 180) % 360) + 360) % 360 - 180;
+  mark.style.width = (hfov / 360 * 100) + "%"; mark.style.height = (vfov / span * 100) + "%";
+  mark.style.left = ((y / 360 + 0.5) * 100 - hfov / 360 * 50) + "%";
+  mark.style.top = ((0.5 - pitch / span) * 100 - vfov / span * 50) + "%";
+}
+
+let dt = 0, last = performance.now();
+renderer.setAnimationLoop((now) => {
+  dt = Math.min(0.05, (now - last) / 1000); last = now;
+  timeline((now - t0) / 1000);
+  if (free) {
+    const f = new THREE.Vector3(Math.sin(yaw * rad), 0, -Math.cos(yaw * rad)), r = new THREE.Vector3(-f.z, 0, f.x);
+    const sp = (keys.has("shift") ? 2.7 : 0.9) * dt;
+    if (keys.has("e")) pos.y += sp;
+    if (keys.has("q")) pos.y -= sp;
+    if (keys.has("w") || keys.has("arrowup")) pos.addScaledVector(f, sp);
+    if (keys.has("s") || keys.has("arrowdown")) pos.addScaledVector(f, -sp);
+    if (keys.has("d") || keys.has("arrowright")) pos.addScaledVector(r, sp);
+    if (keys.has("a") || keys.has("arrowleft")) pos.addScaledVector(r, -sp);
+    if (pos.length() > REACH) pos.setLength(REACH);
+  }
+  // left alone, the camera sways a few centimetres so near things slide against far ones
+  const idle = free ? ease((now - lastInput - 2500) / 2500) : 0, ph = now / 1000;
+  const right = new THREE.Vector3(Math.cos(yaw * rad), 0, Math.sin(yaw * rad));
+  camera.position.copy(pos).addScaledVector(right, idle * 0.035 * D * Math.sin(ph * 0.55));
+  camera.position.y += idle * 0.014 * D * Math.sin(ph * 0.41);
+  camera.rotation.set(pitch * rad, -yaw * rad, 0);
+  placeMark();
+  if (free && pending.length) pending.splice(0).forEach(m => scene.add(m));
+  extras.forEach(x => { if (x.a < 1 && x.mesh.parent) x.mesh.opacity = x.a = Math.min(1, x.a + dt / 0.7); });
+  $("frame").style.opacity = $("gen").style.opacity = free ? 1 : 0;
+  renderer.render(scene, camera);
+});
+
+// ---- generate: the image model repaints the framed view, SHARP turns it into splats, it replaces what was there -------
+function capture() {
+  renderer.render(scene, camera);
+  const src = renderer.domElement, s = Math.min(src.width, src.height), c = document.createElement("canvas");
+  c.width = c.height = s;
+  c.getContext("2d").drawImage(src, (src.width - s) / 2, (src.height - s) / 2, s, s, 0, 0, s, s);
+  return c.toDataURL("image/jpeg", 0.92);
+}
+async function applyGen(st) {       // swap in the chunks the server rewrote and add the generated views
+  const add = [], drop = [];
+  chunks.forEach((c) => {
+    const f = st.replace[c.v.file] || c.v.file;
+    if (f === c.file) return;
+    c.file = f; drop.push(c.mesh);
+    c.mesh = new SplatMesh(fancy ? { url: base + f, objectModifier: growModifier(c.t, dirOf(c.v.yaw, c.v.pitch)) } : { url: base + f });
+    add.push(c.mesh);
+  });
+  st.gens.forEach((g) => {
+    let x = extras.find(x => x.id === g.id);
+    if (!x) extras.push(x = { id: g.id, a: 0 });
+    if (x.file === g.file) return;
+    if (x.mesh) drop.push(x.mesh);
+    x.file = g.file; x.mesh = new SplatMesh({ url: base + g.file }); x.mesh.opacity = x.a;
+    add.push(x.mesh);
+  });
+  await Promise.all(add.map(m => m.initialized));
+  pending.push(...add);
+  drop.forEach(m => { scene.remove(m); m.dispose?.(); });
+}
+let busy = false;
+async function generate(extra = {}) {
+  if (busy || !free) return;
+  busy = true; lastInput = performance.now() + 1e7;                       // no idle sway while the frame is being replaced
+  camera.updateMatrixWorld();
+  const body = { world: name, image: capture(), matrix: Array.from(camera.matrixWorld.elements), fov: camera.fov, ...extra };
+  const tg = performance.now(), tick = setInterval(() => { genStatus = `generating this view · ${Math.round((performance.now() - tg) / 1000)}s`; }, 250);
+  $("frame").classList.add("busy");
+  let msg = "";
+  try {
+    const r = await fetch("/generate", { method: "POST", body: JSON.stringify(body) }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    await applyGen(r);
+  } catch (e) { msg = "generate failed: " + (e.message.includes("JSON") || e.message.includes("fetch") ? "open this page through world/serve.py" : e.message); console.warn(msg); }
+  clearInterval(tick); genStatus = msg; $("frame").classList.remove("busy");
+  busy = false; lastInput = performance.now();
+  return msg;
+}
+$("gen").addEventListener("click", () => generate());
+
+// ---- input ----------------------------------------------------------------------------------
+const el = renderer.domElement;
+let drag = null;
+el.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY }; el.setPointerCapture(e.pointerId); takeOver(); });
+el.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  lastInput = performance.now();
+  const k = camera.fov / innerHeight;
+  yaw -= (e.clientX - drag.x) * k; pitch = Math.max(-85, Math.min(85, pitch + (e.clientY - drag.y) * k));
+  drag = { x: e.clientX, y: e.clientY };
+});
+el.addEventListener("pointerup", () => { drag = null; });
+el.addEventListener("wheel", (e) => { e.preventDefault(); camera.fov = Math.max(30, Math.min(90, camera.fov + e.deltaY * 0.03)); camera.updateProjectionMatrix(); }, { passive: false });
+addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "r") return replay();
+  if (k === "g") return generate();
+  if (k === "x" && !busy) return fetch("/reset", { method: "POST", body: JSON.stringify({ world: name }) }).then(() => location.reload());
+  if (/^[1-9]$/.test(k) && names[k - 1]) { location.search = "?w=" + names[k - 1]; return; }
+  keys.add(k);
+  if ("wasdqe ".includes(k) || k.startsWith("arrow")) takeOver();
+});
+addEventListener("keyup", () => { lastInput = performance.now();
+});
+addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+
+if (world.prompt) document.querySelector("#panoBox").previousElementSibling.textContent = `image model paints the rest: "${world.prompt}"`;
+$("count").innerHTML = `${chunks.length} views<br>${(world.total / 1e6).toFixed(1)}M splats`;
+replay();
+if (gen0) await applyGen(gen0);
+window.__world = { chunks, extras, replay, generate, capture, T_END, move: (x, y, z) => { takeOver(); pos.set(x, y, z); }, get free() { return free; }, seek: (s) => { free = false; t0 = performance.now() - s * 1000; },
+  look: (y, p = 0) => { takeOver(); pos.set(0, 0, 0); yaw = y; pitch = p; } };
+</script>

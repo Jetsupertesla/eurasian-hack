@@ -1,0 +1,118 @@
+{
+ "name": "overgrown",
+ "prompt": "abandoned for decades, reclaimed by nature",
+ "fov": 90.0,
+ "panoW": 6336,
+ "panoH": 2688,
+ "views": [
+  {
+   "file": "view_00.ply",
+   "thumb": "view_00.jpg",
+   "yaw": 0,
+   "pitch": 0,
+   "scale": 1.0,
+   "count": 429998,
+   "dist": 4.97
+  },
+  {
+   "file": "view_01.ply",
+   "thumb": "view_01.jpg",
+   "yaw": 60,
+   "pitch": 0,
+   "scale": 1.0306,
+   "count": 430806,
+   "dist": 5.47
+  },
+  {
+   "file": "view_02.ply",
+   "thumb": "view_02.jpg",
+   "yaw": -60,
+   "pitch": 0,
+   "scale": 0.878,
+   "count": 428546,
+   "dist": 4.2
+  },
+  {
+   "file": "view_03.ply",
+   "thumb": "view_03.jpg",
+   "yaw": 120,
+   "pitch": 0,
+   "scale": 1.0365,
+   "count": 430537,
+   "dist": 3.88
+  },
+  {
+   "file": "view_04.ply",
+   "thumb": "view_04.jpg",
+   "yaw": -120,
+   "pitch": 0,
+   "scale": 0.9295,
+   "count": 431929,
+   "dist": 2.43
+  },
+  {
+   "file": "view_05.ply",
+   "thumb": "view_05.jpg",
+   "yaw": 180,
+   "pitch": 0,
+   "scale": 0.9908,
+   "count": 432852,
+   "dist": 2.22
+  },
+  {
+   "file": "view_06.ply",
+   "thumb": "view_06.jpg",
+   "yaw": 0,
+   "pitch": -55,
+   "scale": 1.3186,
+   "count": 432176,
+   "dist": 2.06
+  },
+  {
+   "file": "view_07.ply",
+   "thumb": "view_07.jpg",
+   "yaw": 120,
+   "pitch": -55,
+   "scale": 1.0362,
+   "count": 434021,
+   "dist": 1.74
+  },
+  {
+   "file": "view_08.ply",
+   "thumb": "view_08.jpg",
+   "yaw": -120,
+   "pitch": -55,
+   "scale": 1.0058,
+   "count": 433002,
+   "dist": 1.41
+  },
+  {
+   "file": "view_09.ply",
+   "thumb": "view_09.jpg",
+   "yaw": 60,
+   "pitch": 55,
+   "scale": 1.1012,
+   "count": 431692,
+   "dist": 3.83
+  },
+  {
+   "file": "view_10.ply",
+   "thumb": "view_10.jpg",
+   "yaw": 180,
+   "pitch": 55,
+   "scale": 1.2315,
+   "count": 433285,
+   "dist": 3.0
+  },
+  {
+   "file": "view_11.ply",
+   "thumb": "view_11.jpg",
+   "yaw": -60,
+   "pitch": 55,
+   "scale": 1.1292,
+   "count": 430279,
+   "dist": 4.0
+  }
+ ],
+ "total": 5179123
+}

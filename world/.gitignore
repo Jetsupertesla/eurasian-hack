@@ -1,0 +1,6 @@
+# splat chunks are ~25 MB each: rebuild with build.py or copy the folder over, never commit
+worlds/*/*.ply
+worlds/*/.work*
+__pycache__/
+worlds/.bakeoff/
+worlds/*/gen*

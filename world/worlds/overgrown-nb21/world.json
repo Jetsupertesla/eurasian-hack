@@ -1,0 +1,118 @@
+{
+ "name": "overgrown-nb21",
+ "prompt": "abandoned for decades, reclaimed by nature",
+ "fov": 90.0,
+ "panoW": 6336,
+ "panoH": 2688,
+ "views": [
+  {
+   "file": "view_00.ply",
+   "thumb": "view_00.jpg",
+   "yaw": 0,
+   "pitch": 0,
+   "scale": 1.0,
+   "count": 429150,
+   "dist": 4.76
+  },
+  {
+   "file": "view_01.ply",
+   "thumb": "view_01.jpg",
+   "yaw": 60,
+   "pitch": 0,
+   "scale": 1.0689,
+   "count": 431920,
+   "dist": 3.86
+  },
+  {
+   "file": "view_02.ply",
+   "thumb": "view_02.jpg",
+   "yaw": -60,
+   "pitch": 0,
+   "scale": 0.8672,
+   "count": 430665,
+   "dist": 3.99
+  },
+  {
+   "file": "view_03.ply",
+   "thumb": "view_03.jpg",
+   "yaw": 120,
+   "pitch": 0,
+   "scale": 0.9943,
+   "count": 432210,
+   "dist": 6.1
+  },
+  {
+   "file": "view_04.ply",
+   "thumb": "view_04.jpg",
+   "yaw": -120,
+   "pitch": 0,
+   "scale": 0.9666,
+   "count": 430521,
+   "dist": 6.04
+  },
+  {
+   "file": "view_05.ply",
+   "thumb": "view_05.jpg",
+   "yaw": 180,
+   "pitch": 0,
+   "scale": 0.9758,
+   "count": 426193,
+   "dist": 4.08
+  },
+  {
+   "file": "view_06.ply",
+   "thumb": "view_06.jpg",
+   "yaw": 0,
+   "pitch": -55,
+   "scale": 1.2841,
+   "count": 434182,
+   "dist": 1.8
+  },
+  {
+   "file": "view_07.ply",
+   "thumb": "view_07.jpg",
+   "yaw": 120,
+   "pitch": -55,
+   "scale": 0.9056,
+   "count": 431399,
+   "dist": 1.69
+  },
+  {
+   "file": "view_08.ply",
+   "thumb": "view_08.jpg",
+   "yaw": -120,
+   "pitch": -55,
+   "scale": 0.8878,
+   "count": 434502,
+   "dist": 1.27
+  },
+  {
+   "file": "view_09.ply",
+   "thumb": "view_09.jpg",
+   "yaw": 60,
+   "pitch": 55,
+   "scale": 1.2043,
+   "count": 432304,
+   "dist": 3.92
+  },
+  {
+   "file": "view_10.ply",
+   "thumb": "view_10.jpg",
+   "yaw": 180,
+   "pitch": 55,
+   "scale": 0.7804,
+   "count": 434774,
+   "dist": 4.22
+  },
+  {
+   "file": "view_11.ply",
+   "thumb": "view_11.jpg",
+   "yaw": -60,
+   "pitch": 55,
+   "scale": 1.1796,
+   "count": 430372,
+   "dist": 3.82
+  }
+ ],
+ "total": 5178192
+}

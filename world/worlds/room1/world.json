@@ -1,0 +1,117 @@
+{
+ "name": "room1",
+ "fov": 90.0,
+ "panoW": 6336,
+ "panoH": 2688,
+ "views": [
+  {
+   "file": "view_00.ply",
+   "thumb": "view_00.jpg",
+   "yaw": 0,
+   "pitch": 0,
+   "scale": 1.0,
+   "count": 430302,
+   "dist": 2.17
+  },
+  {
+   "file": "view_01.ply",
+   "thumb": "view_01.jpg",
+   "yaw": 60,
+   "pitch": 0,
+   "scale": 0.9397,
+   "count": 432240,
+   "dist": 1.31
+  },
+  {
+   "file": "view_02.ply",
+   "thumb": "view_02.jpg",
+   "yaw": -60,
+   "pitch": 0,
+   "scale": 0.924,
+   "count": 431746,
+   "dist": 2.02
+  },
+  {
+   "file": "view_03.ply",
+   "thumb": "view_03.jpg",
+   "yaw": 120,
+   "pitch": 0,
+   "scale": 1.2841,
+   "count": 429111,
+   "dist": 5.11
+  },
+  {
+   "file": "view_04.ply",
+   "thumb": "view_04.jpg",
+   "yaw": -120,
+   "pitch": 0,
+   "scale": 1.1817,
+   "count": 431407,
+   "dist": 1.91
+  },
+  {
+   "file": "view_05.ply",
+   "thumb": "view_05.jpg",
+   "yaw": 180,
+   "pitch": 0,
+   "scale": 1.3625,
+   "count": 431476,
+   "dist": 3.58
+  },
+  {
+   "file": "view_06.ply",
+   "thumb": "view_06.jpg",
+   "yaw": 0,
+   "pitch": -55,
+   "scale": 0.9446,
+   "count": 435702,
+   "dist": 1.5
+  },
+  {
+   "file": "view_07.ply",
+   "thumb": "view_07.jpg",
+   "yaw": 120,
+   "pitch": -55,
+   "scale": 1.5177,
+   "count": 435391,
+   "dist": 2.11
+  },
+  {
+   "file": "view_08.ply",
+   "thumb": "view_08.jpg",
+   "yaw": -120,
+   "pitch": -55,
+   "scale": 1.263,
+   "count": 434400,
+   "dist": 2.16
+  },
+  {
+   "file": "view_09.ply",
+   "thumb": "view_09.jpg",
+   "yaw": 60,
+   "pitch": 55,
+   "scale": 0.9079,
+   "count": 435289,
+   "dist": 2.44
+  },
+  {
+   "file": "view_10.ply",
+   "thumb": "view_10.jpg",
+   "yaw": 180,
+   "pitch": 55,
+   "scale": 1.2445,
+   "count": 433247,
+   "dist": 3.07
+  },
+  {
+   "file": "view_11.ply",
+   "thumb": "view_11.jpg",
+   "yaw": -60,
+   "pitch": 55,
+   "scale": 0.9347,
+   "count": 433795,
+   "dist": 2.51
+  }
+ ],
+ "total": 5194106
+}
