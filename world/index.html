@@ -10,12 +10,16 @@
   #shade { position: absolute; left: 0; right: 0; bottom: 0; height: 190px; pointer-events: none;
     background: linear-gradient(transparent, rgba(0, 0, 0, .7)); }
   .hud { position: absolute; pointer-events: none; text-transform: uppercase; text-shadow: 0 0 3px #000, 0 0 8px #000; }
-  #worlds { top: 18px; left: 20px; pointer-events: auto; }
+  [hidden] { display: none !important; }
+  button, input, select { font: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: .4; }
+  #worlds { top: 62px; left: 20px; right: 20px; white-space: nowrap; overflow: auto; pointer-events: auto; }
   #worlds a { color: #b9b9b2; text-decoration: none; margin-right: 16px; }
   #worlds a.on { color: #fff; border-bottom: 1px solid #fff; padding-bottom: 2px; }
-  #status { top: 18px; right: 20px; text-align: right; color: #fff; }
-  #keys { bottom: 20px; right: 20px; text-align: right; color: #b9b9b2; }
-  #strip { bottom: 20px; left: 20px; display: flex; align-items: flex-end; gap: 12px; }
+  #status { top: 96px; right: 20px; max-width: min(650px, calc(100vw - 40px)); text-align: right; color: #fff; text-transform: none; }
+  #keys { bottom: 178px; right: 20px; text-align: right; color: #b9b9b2; }
+  #strip { bottom: 178px; left: 20px; display: flex; align-items: flex-end; gap: 12px; }
   #strip figure { margin: 0; }
   #strip figcaption { color: #b9b9b2; margin-bottom: 5px; }
   #strip img { display: block; height: 96px; border: 1px solid #77776f; }
@@ -27,13 +31,61 @@
     pointer-events: none; border: 1px solid rgba(255, 255, 255, .28); opacity: 0; transition: opacity .4s; }
   #frame.busy { border-color: #fff; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45); animation: scan 1.2s ease-in-out infinite alternate; }
   @keyframes scan { from { border-color: rgba(255, 255, 255, .35); } to { border-color: #fff; } }
-  #gen { bottom: 20px; left: 50%; transform: translateX(-50%); pointer-events: auto; cursor: pointer; color: #fff;
-    border: 1px solid #fff; padding: 6px 14px; background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity .4s; }
+  #gen-controls { position: absolute; z-index: 2; bottom: 20px; left: 20px; right: 20px;
+    display: flex; align-items: flex-end; gap: 12px; padding: 12px; background: rgba(0, 0, 0, .8);
+    border: 1px solid #77776f; box-sizing: border-box; }
+  #gen-controls label { flex: 1; min-width: 0; color: #b9b9b2; font-size: 10px; text-transform: uppercase; }
+  #prompt { display: block; width: 100%; box-sizing: border-box; margin-top: 5px; padding: 7px 9px;
+    color: #fff; background: #171717; border: 1px solid #77776f; font: inherit; font-size: 12px; }
+  #prompt:focus { outline: 1px solid #fff; border-color: #fff; }
+  #gen { cursor: pointer; color: #fff; border: 1px solid #fff; padding: 8px 14px;
+    background: rgba(0, 0, 0, .45); font: inherit; white-space: nowrap; }
+  #gen:disabled { opacity: .45; cursor: wait; }
+  #tools { position: absolute; z-index: 3; top: 16px; left: 20px; display: flex; gap: 16px; align-items: center; }
+  .tool { color: #e9e9e4; background: #131918e8; border: 1px solid #626e68; padding: 7px 11px; border-radius: 4px; }
+  #tools label { cursor: pointer; display: flex; align-items: center; gap: 7px; }
+  input[type="checkbox"], input[type="range"] { accent-color: #9de7ce; }
+  #library { position: absolute; z-index: 4; left: 20px; top: 100px; bottom: 182px; width: 310px;
+    display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; background: #101716f5;
+    border: 1px solid #62736b; border-radius: 8px; box-shadow: 0 8px 30px #0008; }
+  #library header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  #library h2 { margin: 0; font: inherit; font-size: 16px; }
+  #library p { color: #b9c7c0; margin: 6px 0 12px; }
+  #library-filter { width: 100%; box-sizing: border-box; background: #080e0b; color: #fff; border: 1px solid #62736b; padding: 8px; margin: 10px 0; }
+  #library-items { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; align-content: start; }
+  .asset { padding: 0; text-align: left; color: #e9e9e4; background: #1c2521; border: 1px solid #43544b; border-radius: 5px; overflow: hidden; }
+  .asset:hover, .asset:focus-visible { border-color: #a6efd2; }
+  .asset img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+  .asset span, .asset small { display: block; margin: 6px 8px; overflow-wrap: anywhere; }
+  .asset small { color: #adc2b6; font-size: 10px; }
+  #library-message { color: #b9c7c0; margin: 8px 0 0; }
+  #history-controls { position: absolute; z-index: 2; bottom: 110px; left: 50%; transform: translateX(-50%);
+    width: min(760px, calc(100% - 40px)); box-sizing: border-box; padding: 10px 12px; background: #0c1311e8;
+    border: 1px solid #62736b; border-radius: 5px; }
+  #history-label { display: block; margin-bottom: 7px; color: #c6d7cc; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+  .history-row { display: flex; align-items: center; gap: 10px; }
+  #history-range { flex: 1; min-width: 40px; cursor: ew-resize; }
+  body.library-open #strip { visibility: hidden; }
+  @media (max-width: 650px) { #keys { display: none; } #gen-controls { gap: 8px; left: 10px; right: 10px; } }
+  @media (max-width: 420px) { #library { left: 10px; width: calc(100% - 20px); } #strip { display: none; } }
 </style>
 
 <div id="shade"></div>
+<div id="tools">
+  <button id="library-toggle" class="tool" type="button" aria-expanded="false" aria-controls="library">Images · B</button>
+  <label><input id="show-cones" type="checkbox" checked> View cones</label>
+</div>
+<aside id="library" hidden aria-label="Image library">
+  <header><h2>Image library</h2><button id="library-close" class="tool" type="button" aria-label="Close image library">×</button></header>
+  <p>Choose a photo to place it here, upright.</p>
+  <button id="library-upload" class="tool" type="button">Add photos…</button>
+  <input id="library-files" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+  <input id="library-filter" type="search" placeholder="Search photos, edits, generations…" aria-label="Search image library">
+  <div id="library-items"></div>
+  <div id="library-message" role="status"></div>
+</aside>
 <div id="worlds" class="hud"></div>
-<div id="status" class="hud">loading</div>
+<div id="status" class="hud" role="status" aria-live="polite">loading</div>
 <div id="strip" class="hud">
   <figure><figcaption>1 photo</figcaption><img id="photo"></figure>
   <div class="arrow">&rarr;</div>
@@ -43,8 +95,23 @@
   <div id="count"></div>
 </div>
 <div id="frame"></div>
-<div id="gen" class="hud">generate this view &middot; g</div>
-<div id="keys" class="hud">drag look &middot; wasd move &middot; q e down up &middot; shift fast &middot; scroll zoom<br>g generate &middot; x undo generated &middot; r replay</div>
+<section id="history-controls" aria-label="World history">
+  <output id="history-label" for="history-range">Starting view</output>
+  <div class="history-row">
+    <button id="history-undo" class="tool" type="button" title="Undo · Cmd/Ctrl Z or [" disabled>Undo</button>
+    <input id="history-range" type="range" min="0" max="0" step="1" value="0" aria-label="World history step" disabled>
+    <button id="history-redo" class="tool" type="button" title="Redo · Cmd/Ctrl Shift Z or ]" disabled>Redo</button>
+    <button id="history-play" class="tool" type="button" disabled>Play</button>
+  </div>
+</section>
+<form id="gen-controls">
+  <label for="prompt">Additional prompt · optional
+    <input id="prompt" name="prompt" type="text" maxlength="2000" autocomplete="off"
+      placeholder="e.g. Add a bookshelf and warm lamps along the left wall">
+  </label>
+  <button id="gen" type="submit" disabled>Generate · G</button>
+</form>
+<div id="keys" class="hud">drag look &middot; wasd move &middot; q e down up &middot; shift fast &middot; scroll zoom<br>g generate &middot; [ ] history &middot; b images &middot; r reset camera</div>
 
 <script type="importmap">
 { "imports": {
@@ -57,15 +124,31 @@
 <script type="module">
 import * as THREE from "three";
 import { SparkRenderer, SplatMesh, dyno } from "@sparkjsdev/spark";
+import { coneVertices } from "./editor-utils.mjs";
 
 const q = new URLSearchParams(location.search);
+const single = q.get("mode") !== "360";
+const mode = single ? "single" : "360";
 const $ = (id) => document.getElementById(id);
 const names = await fetch("./worlds/index.json").then(r => r.json()).catch(() => []);
 const name = q.get("w") || names[0] || "room3";
 const base = `./worlds/${name}/`;
 const world = await (await fetch(base + "world.json")).json();
-$("worlds").innerHTML = names.map((n, i) => `<a class="${n === name ? "on" : ""}" href="?w=${n}">${i + 1} ${n}</a>`).join("");
-const gen0 = await fetch(base + "gen.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null);   // views generated earlier
+if (single) {
+  world.views = world.views.slice(0, 1);
+  world.total = world.views[0].count;
+  document.querySelector("#panoBox").parentElement.hidden = true;
+  document.querySelectorAll("#strip .arrow").forEach(el => { el.hidden = true; });
+}
+$("worlds").innerHTML = names.map((n, i) => `<a class="${n === name ? "on" : ""}" href="?w=${n}&mode=${mode}">${i + 1} ${n}</a>`).join("");
+let editorReady = false;
+const gen0 = await fetch(`/history?world=${encodeURIComponent(name)}&mode=${mode}`, { cache: "no-store" })
+  .then(async r => { if (!r.ok) throw Error("History unavailable"); const st = await r.json(); editorReady = st.version === 2; return st; })
+  .catch(() => fetch(base + (single ? "gen_single.json" : "gen.json"), { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null));
+let historyState = gen0 || { n: 0, cursor: 0, replace: {}, gens: [], timeline: [{ label: "Starting view" }] };
+let historyLoading = false, historyRequest = 0, historyChain = Promise.resolve();
+let playing = false, playTimer = null, requestedStep = null;
+let showCones = $("show-cones").checked;
 const fileOf = (f) => gen0?.replace?.[f] || f;
 $("photo").src = base + "photo.jpg";
 $("pano").src = base + "pano_small.jpg";
@@ -169,7 +252,8 @@ const extras = [], pending = [];                     // generated views, and mes
 const keys = new Set();
 
 function replay() { t0 = performance.now(); free = false; pos.set(0, 0, 0); yaw = pitch = 0; camera.fov = 62; camera.updateProjectionMatrix();
-  extras.forEach(x => { scene.remove(x.mesh); if (!pending.includes(x.mesh)) pending.push(x.mesh); }); }
+  extras.forEach(x => { scene.remove(x.mesh); if (!pending.includes(x.mesh)) pending.push(x.mesh); });
+  if (single) takeOver(); }
 function takeOver() {               // any input: finish the build at once and hand over the camera
   lastInput = performance.now();
   if (free) return;
@@ -186,7 +270,8 @@ function timeline(tau) {
     if (tau >= c.fireAt) fired++;
     setGrow(c, s);
     const pulse = i === 0 ? ease((tau - T_HOLD) / 0.8) * (1 - ease((tau - T_S) / 1.5)) : (s > 0 && s < 1 ? 1 - Math.abs(s - 0.4) / 0.6 : 0);
-    c.rays.material.opacity = tau < T_END ? 0.55 * Math.max(0, pulse) * (i === 0 ? 1 : 0.6) : 0;
+    c.rays.visible = c.cam.visible = showCones;
+    c.rays.material.opacity = tau < T_END ? 0.55 * Math.max(0, pulse) * (i === 0 ? 1 : 0.6) : 0.23;
     c.cam.material.opacity = tau < T_END && i === 0 ? away * 0.95 : 0;   // one photo, one camera
   });
   $("status").textContent = tau < T_END ? `building view ${String(Math.max(1, fired)).padStart(2, "0")}/${chunks.length}` : genStatus;
@@ -223,67 +308,253 @@ renderer.setAnimationLoop((now) => {
     if (keys.has("a") || keys.has("arrowleft")) pos.addScaledVector(r, -sp);
     if (pos.length() > REACH) pos.setLength(REACH);
   }
-  // left alone, the camera sways a few centimetres so near things slide against far ones
-  const idle = free ? ease((now - lastInput - 2500) / 2500) : 0, ph = now / 1000;
-  const right = new THREE.Vector3(Math.cos(yaw * rad), 0, Math.sin(yaw * rad));
-  camera.position.copy(pos).addScaledVector(right, idle * 0.035 * D * Math.sin(ph * 0.55));
-  camera.position.y += idle * 0.014 * D * Math.sin(ph * 0.41);
+  // History playback only changes geometry; an idle camera stays exactly still.
+  camera.position.copy(pos);
   camera.rotation.set(pitch * rad, -yaw * rad, 0);
   placeMark();
   if (free && pending.length) pending.splice(0).forEach(m => scene.add(m));
   extras.forEach(x => { if (x.a < 1 && x.mesh.parent) x.mesh.opacity = x.a = Math.min(1, x.a + dt / 0.7); });
-  $("frame").style.opacity = $("gen").style.opacity = free ? 1 : 0;
+  $("frame").style.opacity = free ? 1 : 0;
   renderer.render(scene, camera);
 });
 
 // ---- generate: the image model repaints the framed view, SHARP turns it into splats, it replaces what was there -------
 function capture() {
-  renderer.render(scene, camera);
-  const src = renderer.domElement, s = Math.min(src.width, src.height), c = document.createElement("canvas");
-  c.width = c.height = s;
-  c.getContext("2d").drawImage(src, (src.width - s) / 2, (src.height - s) / 2, s, s, 0, 0, s, s);
-  return c.toDataURL("image/jpeg", 0.92);
+  const guides = [...chunks.flatMap(c => [c.cam, c.rays]), ...extras.map(x => x.cone).filter(Boolean)];
+  const visibility = guides.map(g => g.visible);
+  try {
+    guides.forEach(g => { g.visible = false; });
+    renderer.render(scene, camera);
+    const src = renderer.domElement, s = Math.min(src.width, src.height), c = document.createElement("canvas");
+    c.width = c.height = s;
+    c.getContext("2d").drawImage(src, (src.width - s) / 2, (src.height - s) / 2, s, s, 0, 0, s, s);
+    return c.toDataURL("image/jpeg", 0.92);
+  } finally { guides.forEach((g, i) => { g.visible = visibility[i]; }); }
 }
-async function applyGen(st) {       // swap in the chunks the server rewrote and add the generated views
-  const add = [], drop = [];
-  chunks.forEach((c) => {
-    const f = st.replace[c.v.file] || c.v.file;
-    if (f === c.file) return;
-    c.file = f; drop.push(c.mesh);
-    c.mesh = new SplatMesh(fancy ? { url: base + f, objectModifier: growModifier(c.t, dirOf(c.v.yaw, c.v.pitch)) } : { url: base + f });
-    add.push(c.mesh);
-  });
-  st.gens.forEach((g) => {
-    let x = extras.find(x => x.id === g.id);
-    if (!x) extras.push(x = { id: g.id, a: 0 });
-    if (x.file === g.file) return;
-    if (x.mesh) drop.push(x.mesh);
-    x.file = g.file; x.mesh = new SplatMesh({ url: base + g.file }); x.mesh.opacity = x.a;
-    add.push(x.mesh);
-  });
-  await Promise.all(add.map(m => m.initialized));
-  pending.push(...add);
-  drop.forEach(m => { scene.remove(m); m.dispose?.(); });
+function viewCone(g) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(coneVertices(g, D), 3));
+  const cone = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
+    color: g.kind === "placement" ? 0xffd193 : 0x9de7ce, transparent: true, opacity: .48, depthTest: false }));
+  cone.renderOrder = 11; cone.visible = showCones;
+  return cone;
+}
+function disposeCone(cone) {
+  if (!cone) return;
+  scene.remove(cone); cone.geometry.dispose(); cone.material.dispose();
+}
+async function applyGen(st) {
+  // Prepare a complete snapshot first. Failed loads leave the currently visible world intact.
+  const add = [], drop = [], replacements = [], nextExtras = [];
+  for (const c of chunks) {
+    const file = st.replace[c.v.file] || c.v.file;
+    if (file === c.file) continue;
+    const mesh = new SplatMesh(fancy ? { url: base + file, objectModifier: growModifier(c.t, dirOf(c.v.yaw, c.v.pitch)) } : { url: base + file });
+    add.push(mesh); drop.push(c.mesh); replacements.push({ c, file, mesh });
+  }
+  for (const g of st.gens) {
+    const old = extras.find(x => x.id === g.id);
+    if (old?.file === g.file) { nextExtras.push(old); continue; }
+    const mesh = new SplatMesh({ url: base + g.file });
+    mesh.opacity = old ? 1 : 0;
+    const entry = { id: g.id, file: g.file, mesh, a: old ? 1 : 0, cone: viewCone(g) };
+    nextExtras.push(entry); add.push(mesh);
+    if (old) drop.push(old.mesh);
+  }
+  try { await Promise.all(add.map(m => m.initialized)); }
+  catch (error) {
+    add.forEach(m => m.dispose?.());
+    nextExtras.filter(x => !extras.includes(x)).forEach(x => disposeCone(x.cone));
+    throw error;
+  }
+  for (const old of extras) {
+    if (!nextExtras.includes(old)) { if (!drop.includes(old.mesh)) drop.push(old.mesh); disposeCone(old.cone); }
+  }
+  replacements.forEach(({ c, file, mesh }) => { c.file = file; c.mesh = mesh; });
+  extras.splice(0, extras.length, ...nextExtras);
+  add.forEach(m => scene.add(m));
+  extras.forEach(x => { if (!x.cone.parent) scene.add(x.cone); });
+  drop.forEach(m => { const i = pending.indexOf(m); if (i >= 0) pending.splice(i, 1); scene.remove(m); m.dispose?.(); });
+  historyState = st;
+  updateEditorControls();
 }
 let busy = false;
 async function generate(extra = {}) {
-  if (busy || !free) return;
+  if (busy || historyLoading) return;
+  stopPlayback();
+  takeOver();
+  keys.clear();
   busy = true; lastInput = performance.now() + 1e7;                       // no idle sway while the frame is being replaced
-  camera.updateMatrixWorld();
-  const body = { world: name, image: capture(), matrix: Array.from(camera.matrixWorld.elements), fov: camera.fov, ...extra };
-  const tg = performance.now(), tick = setInterval(() => { genStatus = `generating this view · ${Math.round((performance.now() - tg) / 1000)}s`; }, 250);
+  $("gen").disabled = true; $("prompt").disabled = true;
+  updateEditorControls();
+  const placing = !!extra.asset_id;
+  const tg = performance.now(), tick = setInterval(() => { genStatus = `${placing ? "placing photo" : "generating this view"} · ${Math.round((performance.now() - tg) / 1000)}s`; }, 250);
   $("frame").classList.add("busy");
   let msg = "";
   try {
-    const r = await fetch("/generate", { method: "POST", body: JSON.stringify(body) }).then(r => r.json());
+    camera.updateMatrixWorld();
+    if (!editorReady) throw Error("Restart the server in Terminal, then reload to use the new editor.");
+    const body = { world: name, mode, prompt: placing ? "" : $("prompt").value.trim(), image: placing ? undefined : capture(),
+      history_cursor: historyState.cursor, history_n: historyState.n,
+      matrix: Array.from(camera.matrixWorld.elements), fov: camera.fov, ...extra };
+    const health = await fetch("/health", { cache: "no-store" }).then(r => {
+      if (!r.ok) throw new Error("Start the app with npm run serve, then open http://localhost:3095/world/");
+      return r.json();
+    });
+    if (!health.fal_configured && !extra.painted_url && !placing) throw new Error("FAL_KEY missing: run npm run setup:fal, then press G again");
+    if (health.sharp_error) throw new Error("SHARP could not load: " + health.sharp_error);
+    if (!health.sharp_ready) throw new Error("SHARP is still loading. Try G again in a few seconds");
+    const r = await fetch("/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     if (r.error) throw new Error(r.error);
     await applyGen(r);
-  } catch (e) { msg = "generate failed: " + (e.message.includes("JSON") || e.message.includes("fetch") ? "open this page through world/serve.py" : e.message); console.warn(msg); }
-  clearInterval(tick); genStatus = msg; $("frame").classList.remove("busy");
-  busy = false; lastInput = performance.now();
+    if (!$("library").hidden) await loadLibrary();
+  } catch (e) {
+    msg = "Generate failed: " + (e instanceof TypeError && e.message.includes("fetch")
+      ? "Cannot reach the local server. Start it with Start.command, then reload this page." : e.message);
+    console.warn(msg);
+  } finally {
+    clearInterval(tick); genStatus = msg; $("frame").classList.remove("busy");
+    busy = false; lastInput = performance.now();
+    $("gen").disabled = false; $("prompt").disabled = false;
+    updateEditorControls();
+  }
   return msg;
 }
-$("gen").addEventListener("click", () => generate());
+$("gen-controls").addEventListener("submit", (event) => { event.preventDefault(); generate(); });
+$("prompt").addEventListener("focus", () => { keys.clear(); takeOver(); });
+$("prompt").addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { event.preventDefault(); $("prompt").blur(); }
+});
+
+// ---- editor controls ------------------------------------------------------------------------
+function updateEditorControls() {
+  const timeline = historyState.timeline || [{ label: "Starting view" }];
+  const last = timeline.length - 1, at = requestedStep ?? historyState.cursor ?? 0;
+  $("history-range").max = last; $("history-range").value = at;
+  $("history-range").disabled = busy || !editorReady || last === 0;
+  $("history-range").setAttribute("aria-valuetext", `${at} of ${last}: ${timeline[at]?.label || ""}`);
+  $("history-label").textContent = `${at} / ${last} · ${timeline[at]?.label || "Starting view"}${historyLoading ? " · loading" : ""}`;
+  $("history-undo").disabled = busy || !editorReady || at === 0;
+  $("history-redo").disabled = busy || !editorReady || at === last;
+  $("history-play").disabled = busy || !editorReady || last === 0;
+  $("history-play").textContent = playing ? "Pause" : "Play";
+  $("gen").disabled = busy || historyLoading;
+  document.querySelectorAll(".asset").forEach(button => { button.disabled = busy || historyLoading; });
+}
+function stopPlayback() { playing = false; clearTimeout(playTimer); $("history-play").textContent = "Play"; }
+function seekStep(value, fromPlayback = false) {
+  if (busy || !editorReady) return Promise.resolve();
+  if (!fromPlayback) stopPlayback();
+  takeOver(); keys.clear();
+  const last = (historyState.timeline?.length || 1) - 1;
+  const target = Math.max(0, Math.min(last, Math.round(Number(value))));
+  const token = ++historyRequest;
+  requestedStep = target; historyLoading = true; updateEditorControls();
+  historyChain = historyChain.catch(() => {}).then(async () => {
+    if (token !== historyRequest) return;
+    try {
+      const response = await fetch("/history", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ world: name, mode, cursor: target }) });
+      const state = await response.json();
+      if (!response.ok || state.error) throw Error(state.error || "Could not load history");
+      if (token === historyRequest) { await applyGen(state); genStatus = ""; }
+    } catch (error) { genStatus = "History: " + error.message; stopPlayback(); }
+    finally {
+      if (token === historyRequest) { historyLoading = false; requestedStep = null; updateEditorControls(); }
+    }
+  });
+  return historyChain;
+}
+async function playbackStep() {
+  if (!playing) return;
+  const last = (historyState.timeline?.length || 1) - 1;
+  if (historyState.cursor >= last) { stopPlayback(); updateEditorControls(); return; }
+  await seekStep(historyState.cursor + 1, true);
+  if (playing) playTimer = setTimeout(playbackStep, 1100);
+}
+$("history-play").addEventListener("click", async () => {
+  if (playing) { stopPlayback(); return; }
+  playing = true; updateEditorControls();
+  if (historyState.cursor >= (historyState.timeline?.length || 1) - 1) await seekStep(0, true);
+  if (playing) playTimer = setTimeout(playbackStep, 600);
+});
+$("history-undo").addEventListener("click", () => seekStep((requestedStep ?? historyState.cursor) - 1));
+$("history-redo").addEventListener("click", () => seekStep((requestedStep ?? historyState.cursor) + 1));
+$("history-range").addEventListener("input", event => seekStep(event.target.value));
+let wheelAt = -Infinity;
+$("history-range").addEventListener("wheel", event => {
+  event.preventDefault();
+  if (performance.now() - wheelAt < 140) return;
+  wheelAt = performance.now();
+  seekStep((requestedStep ?? historyState.cursor) + Math.sign(event.deltaY));
+}, { passive: false });
+$("show-cones").addEventListener("change", event => {
+  showCones = event.target.checked;
+  extras.forEach(x => { x.cone.visible = showCones; });
+});
+
+let libraryAssets = [];
+function renderLibrary() {
+  const query = $("library-filter").value.trim().toLowerCase();
+  const list = libraryAssets.filter(asset => `${asset.name} ${asset.category}`.toLowerCase().includes(query));
+  $("library-items").replaceChildren();
+  for (const asset of list) {
+    const card = document.createElement("button");
+    card.className = "asset"; card.type = "button"; card.title = `Place ${asset.name} at this viewpoint`;
+    const img = document.createElement("img"); img.src = asset.thumbnail; img.alt = asset.name; img.loading = "lazy";
+    const title = document.createElement("span"); title.textContent = asset.name;
+    const category = document.createElement("small"); category.textContent = asset.category + " · Place here";
+    card.append(img, title, category);
+    card.addEventListener("click", () => generate({ asset_id: asset.id }));
+    $("library-items").append(card);
+  }
+  $("library-message").textContent = list.length ? `${list.length} photos` : "No matching photos";
+  updateEditorControls();
+}
+async function loadLibrary() {
+  try {
+    const response = await fetch("/library", { cache: "no-store" });
+    if (!response.ok) throw Error("Restart the server to enable the image library.");
+    const data = await response.json();
+    if (data.error) throw Error(data.error);
+    libraryAssets = data.assets; renderLibrary();
+  } catch (error) { $("library-message").textContent = error.message; }
+}
+function toggleLibrary(open = $("library").hidden) {
+  $("library").hidden = !open;
+  $("library-toggle").setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("library-open", open);
+  keys.clear();
+  if (open) { takeOver(); loadLibrary(); }
+}
+$("library-toggle").addEventListener("click", () => toggleLibrary());
+$("library-close").addEventListener("click", () => toggleLibrary(false));
+$("library-filter").addEventListener("input", renderLibrary);
+$("library-filter").addEventListener("focus", () => keys.clear());
+$("library").addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); toggleLibrary(false); }
+});
+$("library-upload").addEventListener("click", () => $("library-files").click());
+$("library-files").addEventListener("change", async event => {
+  const files = Array.from(event.target.files);
+  $("library-upload").disabled = true;
+  try {
+    for (const file of files) {
+      if (file.size > 20_000_000) throw Error(`${file.name} is larger than 20 MB.`);
+      $("library-message").textContent = `Adding ${file.name}…`;
+      const image = await new Promise((resolve, reject) => {
+        const reader = new FileReader(); reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(Error("Could not read the image.")); reader.readAsDataURL(file);
+      });
+      const response = await fetch("/library/upload", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, image }) });
+      const result = await response.json();
+      if (!response.ok || result.error) throw Error(result.error || "Upload failed");
+    }
+    await loadLibrary();
+  } catch (error) { $("library-message").textContent = error.message; }
+  finally { $("library-upload").disabled = false; event.target.value = ""; }
+});
 
 // ---- input ----------------------------------------------------------------------------------
 const el = renderer.domElement;
@@ -299,23 +570,37 @@ el.addEventListener("pointermove", (e) => {
 el.addEventListener("pointerup", () => { drag = null; });
 el.addEventListener("wheel", (e) => { e.preventDefault(); camera.fov = Math.max(30, Math.min(90, camera.fov + e.deltaY * 0.03)); camera.updateProjectionMatrix(); }, { passive: false });
 addEventListener("keydown", (e) => {
+  if (e.target.closest?.("input, textarea, select, button, [contenteditable]")) return;
   const k = e.key.toLowerCase();
+  if (busy || e.altKey) return;
+  if ((e.ctrlKey || e.metaKey) && (k === "z" || k === "y")) {
+    e.preventDefault(); return seekStep((requestedStep ?? historyState.cursor) + (k === "y" || e.shiftKey ? 1 : -1));
+  }
+  if (e.ctrlKey || e.metaKey) return;
+  if (e.repeat && "grxb[]".includes(k)) return;
   if (k === "r") return replay();
   if (k === "g") return generate();
-  if (k === "x" && !busy) return fetch("/reset", { method: "POST", body: JSON.stringify({ world: name }) }).then(() => location.reload());
-  if (/^[1-9]$/.test(k) && names[k - 1]) { location.search = "?w=" + names[k - 1]; return; }
+  if (k === "b") return toggleLibrary();
+  if (k === "[") return seekStep((requestedStep ?? historyState.cursor) - 1);
+  if (k === "]") return seekStep((requestedStep ?? historyState.cursor) + 1);
+  if (k === "x") return seekStep(0);
+  if (/^[1-9]$/.test(k) && names[k - 1]) { location.search = "?w=" + names[k - 1] + "&mode=" + mode; return; }
   keys.add(k);
   if ("wasdqe ".includes(k) || k.startsWith("arrow")) takeOver();
 });
 addEventListener("keyup", () => { lastInput = performance.now();
 });
 addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+addEventListener("blur", () => keys.clear());
 addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
 
 if (world.prompt) document.querySelector("#panoBox").previousElementSibling.textContent = `image model paints the rest: "${world.prompt}"`;
 $("count").innerHTML = `${chunks.length} views<br>${(world.total / 1e6).toFixed(1)}M splats`;
 replay();
 if (gen0) await applyGen(gen0);
+updateEditorControls();
+if (!editorReady) genStatus = "Restart the server in Terminal, then reload to use the image library and history.";
 window.__world = { chunks, extras, replay, generate, capture, T_END, move: (x, y, z) => { takeOver(); pos.set(x, y, z); }, get free() { return free; }, seek: (s) => { free = false; t0 = performance.now() - s * 1000; },
-  look: (y, p = 0) => { takeOver(); pos.set(0, 0, 0); yaw = y; pitch = p; } };
+  look: (y, p = 0) => { takeOver(); pos.set(0, 0, 0); yaw = y; pitch = p; }, seekHistory: seekStep,
+  get history() { return historyState; }, get cameraPose() { return { position: camera.position.toArray(), rotation: camera.rotation.toArray() }; } };
 </script>

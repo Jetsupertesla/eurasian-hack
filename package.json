@@ -3,7 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "serve": "serve ."
+    "start": "node scripts/serve.mjs",
+    "dev": "node scripts/serve.mjs",
+    "serve": "node scripts/serve.mjs",
+    "setup:fal": "python3 scripts/setup_fal.py"
   },
   "dependencies": {
     "sharp": "^0.34.0"

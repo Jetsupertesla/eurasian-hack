@@ -34,3 +34,15 @@ Upload/pick a room photo, redesign it with AI, turn both photos into 3D Gaussian
 - Avoid regenerating and recommitting splats unless needed: each changed `.ply` uses another full file's worth of Git LFS storage.
 - Feature freeze 14:30. After that, no new features.
 - Licence note for pitch: SHARP weights are research/non-commercial only.
+
+## Local repair, 2026-11-14
+- `npm run serve` / `npm start` now run the generation backend on localhost:3095 using `.sharp/venv`.
+- `/world/` starts with one front view. G generates only when pressed; `?mode=360` restores the existing full demo.
+- Single-view generations use `gen_single.json` and separate output filenames. X only clears the active mode.
+- `npm run setup:fal` saves a key without echoing it. `.env` / `.env.local` reload on each request and are blocked over HTTP.
+- The connected fal MCP does not export a key for the local server. A local FAL_KEY is still required.
+- SHARP probes Metal in a child process and falls back to CPU if macOS denies access; `/health` reports readiness/device.
+- Start the server in the user's normal Terminal (`Start.command` or `npm run serve`). The restricted agent runner cannot resolve fal; the Terminal server successfully authenticated fal and loaded SHARP on MPS.
+- Optional bottom prompt field: Enter/Generate submits; G works outside text fields. Typing must never trigger camera controls or generation.
+- `/health?check_fal=1` is a read-only connectivity/authentication check, not a model run.
+- Nine offline backend tests and five UI handler tests cover credentials, network failures, prompt forwarding, keyboard isolation, and preserving 360 data. Run `.sharp/venv/bin/python -m unittest discover -s tests -v` and `node --test tests/viewer.test.mjs`.

@@ -1,4 +1,13 @@
 node_modules/
 .env
+.env.*
+!.env.example
+__pycache__/
+world/worlds/*/gen*.json
+world/worlds/*/gen_*
+world/worlds/*/*.c[0-9]*.ply
+world/worlds/*/*.single-c[0-9]*.ply
+world/worlds/*/gen*.tmp
+world/library/
 edited/cand/
 .DS_Store

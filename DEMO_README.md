@@ -13,6 +13,7 @@ The nine 3D room files total about 570 MB; download them on good Wi-Fi
 before the offline demo.
 
 ## Make images (needs FAL_KEY in .env, copy .env.example)
+    npm run setup:fal                     # hidden prompt; stores the key locally, never in Git
     node prep.mjs before originals/room1.jpg
     node edit.mjs room1 sixties 1          # styles: sixties | industrial
     node score.mjs room1 sixties           # pick the highest score
@@ -40,7 +41,11 @@ stores another full copy in Git LFS. Confirm the real files, not tiny LFS
 pointers, are present before taking the presenting laptop offline.
 
 ## Run the viewer
-    npm run serve        # open the printed URL + /viewer.html?room=room1&style=sixties
+    npm run serve        # http://localhost:3095/viewer.html?room=room1&style=sixties
+
+This starts the Python generation server using the local `.sharp/venv` environment (or `SHARP_PYTHON`).
+The root URL opens `/world/`, which starts with a single front view; press **G** to generate more.
+Existing 360 worlds remain available with `/world/?mode=360`. See `world/README.md`.
 
 Alternatively, without Node.js, run `python3 -m http.server 8001` from
 this directory and open

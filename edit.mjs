@@ -1,7 +1,15 @@
 // Usage: node edit.mjs room3 sixties [seed]  -> edited/cand/room3-sixties-s<seed>.png
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-const env = Object.fromEntries(readFileSync(".env", "utf8").split(/\r?\n/).filter(l => l.includes("=")).map(l => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
+import { parseEnv } from "node:util";
+import { fileURLToPath } from "node:url";
+process.chdir(fileURLToPath(new URL(".", import.meta.url)));
+const env = {};
+for (const name of [".env", ".env.local"]) {
+  try { Object.assign(env, parseEnv(readFileSync(name, "utf8"))); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+}
 const KEY = process.env.FAL_KEY || env.FAL_KEY;
+if (!KEY || KEY === "your-fal-key-here") throw new Error("FAL_KEY missing: run npm run setup:fal");
 const MODEL = process.env.EDIT_MODEL || "fal-ai/qwen-image-edit-2511";
 const [room, style, seedArg] = process.argv.slice(2);
 const seed = Number(seedArg ?? 1);

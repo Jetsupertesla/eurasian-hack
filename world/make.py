@@ -12,6 +12,7 @@ SEAM_REPAINT=1 forces that call for any model.
 import sys, os, json, time, base64, subprocess, io
 import requests  # comes with the SHARP environment
 from PIL import Image
+from config import require_fal_key
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 src, name = sys.argv[1], sys.argv[2]
@@ -20,11 +21,7 @@ ROOT = os.path.join(HERE, "worlds", name)
 MODEL = os.environ.get("FILL_MODEL", "google/nano-banana-2.1/edit")
 REPAINT = os.environ.get("SEAM_REPAINT", "1" if "nano-banana-pro" in MODEL else "0") == "1"
 
-env = os.path.join(HERE, "..", ".env")
-KEY = os.environ.get("FAL_KEY") or next(
-    (l.split("=", 1)[1].strip() for l in open(env) if l.startswith("FAL_KEY=")), "") if os.path.exists(env) else os.environ.get("FAL_KEY")
-if not KEY:
-    sys.exit("FAL_KEY missing: put FAL_KEY=... in .env at the repo root")
+KEY = require_fal_key()
 
 FILL = ("This is an unfinished 360-degree equirectangular panorama of one interior: the full image spans 360 degrees "
         "horizontally and its left and right edges are the same direction. The middle shows the part that has already "
