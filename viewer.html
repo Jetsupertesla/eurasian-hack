@@ -1,0 +1,162 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Renovate3D — demo</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0d0d0f; color: #eee;
+    font: 14px/1.4 system-ui, sans-serif; overflow: hidden; }
+  #stage { position: absolute; inset: 0 0 64px 0; }
+  #bar { position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+    display: flex; gap: 14px; align-items: center; padding: 0 18px; box-sizing: border-box;
+    background: #15151a; border-top: 1px solid #26262e; }
+  #wipe { flex: 1; min-width: 120px; }
+  button { background: #2a2a33; color: #eee; border: 1px solid #3a3a45;
+    border-radius: 6px; padding: 7px 13px; font: inherit; cursor: pointer; }
+  button:hover { background: #343440; }
+  a { color: #9ab; text-decoration: none; margin-right: 10px; }
+  a.on { color: #fff; font-weight: 500; text-decoration: underline; }
+  #links { position: absolute; top: 14px; left: 18px; font-size: 13px; }
+  #msg { position: absolute; top: 50%; left: 0; right: 0; text-align: center;
+    color: #888; transform: translateY(-50%); }
+</style>
+
+<div id="stage"><div id="msg">Loading 3D room…</div></div>
+<div id="links"></div>
+<div id="bar">
+  <span>Before</span>
+  <input id="wipe" type="range" min="-1" max="1" step="0.004" value="-1">
+  <span>After</span>
+  <button id="sweep">Sweep</button>
+  <button id="reset">Reset view</button>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+  "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.4.0/dist/spark.module.js"
+} }
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SparkRenderer, SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ---- which room and style: ?room=room1&style=japandi -----------------------
+const ROOMS = ["room1", "room2", "room3"];
+const STYLES = ["japandi", "industrial"];
+const q = new URLSearchParams(location.search);
+const room = q.get("room") || ROOMS[0];
+const style = q.get("style") || STYLES[0];
+
+const links = document.getElementById("links");
+links.innerHTML =
+  ROOMS.map(r => `<a class="${r === room ? "on" : ""}" href="?room=${r}&style=${style}">${r}</a>`).join("") +
+  " &nbsp;|&nbsp; " +
+  STYLES.map(s => `<a class="${s === style ? "on" : ""}" href="?room=${room}&style=${s}">${s}</a>`).join("");
+
+// ---- scene -----------------------------------------------------------------
+const stage = document.getElementById("stage");
+const msg = document.getElementById("msg");
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(stage.clientWidth, stage.clientHeight);
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, stage.clientWidth / stage.clientHeight, 0.05, 200);
+const spark = new SparkRenderer({ renderer });
+scene.add(spark);
+
+// ---- the wipe --------------------------------------------------------------
+// One shared number drives both scenes. -1 = all before, +1 = all after.
+const wipe = dyno.dynoFloat(-1);
+
+const makeWipe = (showWhenLeftOfLine) =>
+  dyno.dynoBlock({ gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat }, ({ gsplat }) => {
+    const { center, opacity } = dyno.splitGsplat(gsplat).outputs;
+    const { x, z } = dyno.split(center).outputs;
+    const t = dyno.div(x, z);            // left-right position seen from the photo's camera
+    const visible = showWhenLeftOfLine
+      ? dyno.lessThan(t, wipe)
+      : dyno.greaterThanEqual(t, wipe);
+    const newOpacity = dyno.select(visible, opacity, dyno.dynoConst("float", 0));
+    return { gsplat: dyno.combineGsplat({ gsplat, opacity: newOpacity }) };
+  });
+
+const before = new SplatMesh({ url: `./rooms/${room}-before.ply`, objectModifier: makeWipe(false) });
+const after  = new SplatMesh({ url: `./rooms/${room}-${style}.ply`, objectModifier: makeWipe(true) });
+
+// FLIP: SHARP is y-down / z-forward, three.js is y-up and looks down -z.
+// If the room is upside down, try (0,0,0,1) instead.
+const FLIP = [1, 0, 0, 0];
+for (const m of [before, after]) {
+  m.quaternion.set(...FLIP);
+  scene.add(m);
+}
+
+Promise.all([before.initialized, after.initialized])
+  .then(() => { msg.remove(); })
+  .catch((e) => { msg.textContent = "Could not load: " + e; });
+
+// ---- camera: start at the photo's viewpoint, allow a small look-around -----
+const TARGET = new THREE.Vector3(0, 0, -2);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(TARGET);
+controls.enablePan = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minAzimuthAngle = -0.25; controls.maxAzimuthAngle = 0.25;   // left-right, radians
+controls.minPolarAngle = Math.PI / 2 - 0.15;                          // up-down
+controls.maxPolarAngle = Math.PI / 2 + 0.15;
+controls.minDistance = 1.2; controls.maxDistance = 2.4;
+
+function resetView() {
+  camera.position.set(0, 0, 0.001);
+  controls.target.copy(TARGET);
+  controls.update();
+  // slow push-in so judges see depth before touching anything
+  const t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / 2000);
+    camera.position.z = 0.001 - 0.45 * (1 - Math.pow(1 - k, 3));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+resetView();
+
+// ---- controls --------------------------------------------------------------
+const slider = document.getElementById("wipe");
+function setWipe(v) {
+  wipe.value = v;
+  before.updateVersion();
+  after.updateVersion();
+  slider.value = String(v);
+}
+slider.oninput = () => setWipe(parseFloat(slider.value));
+
+document.getElementById("sweep").onclick = () => {
+  const t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / 2500);
+    setWipe(-1 + 2 * k);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+};
+document.getElementById("reset").onclick = resetView;
+
+addEventListener("keydown", (e) => {
+  if (e.key === " ") { e.preventDefault(); document.getElementById("sweep").click(); }
+  if (e.key === "r") resetView();
+});
+
+addEventListener("resize", () => {
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+  camera.aspect = stage.clientWidth / stage.clientHeight;
+  camera.updateProjectionMatrix();
+});
+
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>

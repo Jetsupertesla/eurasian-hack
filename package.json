@@ -1,0 +1,11 @@
+{
+  "name": "eurasian-hack-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "npx --yes serve ."
+  },
+  "dependencies": {
+    "sharp": "^0.34.0"
+  }
+}
